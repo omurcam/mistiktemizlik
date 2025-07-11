@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/page": "app/page.js",
+  "/neden-biz/page": "app/neden-biz/page.js",
+  "/blog/page": "app/blog/page.js",
+  "/hizmetler/page": "app/hizmetler/page.js",
+  "/iletisim/page": "app/iletisim/page.js",
+  "/randevu/page": "app/randevu/page.js",
+  "/scroll-demo/page": "app/scroll-demo/page.js",
+  "/blog/[slug]/page": "app/blog/[slug]/page.js"
+}
