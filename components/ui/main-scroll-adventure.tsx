@@ -164,6 +164,8 @@ export default function MainScrollAdventure() {
   const numOfPages = pages.length;
   const animTime = 1200;
   const scrolling = useRef(false);
+  const touchStartY = useRef(0);
+  const touchEndY = useRef(0);
 
   const navigateUp = useCallback(() => {
     if (currentPage > 1) setCurrentPage(p => p - 1);
@@ -172,6 +174,32 @@ export default function MainScrollAdventure() {
   const navigateDown = useCallback(() => {
     if (currentPage < numOfPages) setCurrentPage(p => p + 1);
   }, [currentPage, numOfPages]);
+
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartY.current = e.targetTouches[0].clientY;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    e.preventDefault();
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (scrolling.current) return;
+    touchEndY.current = e.changedTouches[0].clientY;
+    
+    const diffY = touchStartY.current - touchEndY.current;
+    const minSwipeDistance = 50;
+    
+    if (Math.abs(diffY) > minSwipeDistance) {
+      scrolling.current = true;
+      if (diffY > 0) {
+        navigateDown();
+      } else {
+        navigateUp();
+      }
+      setTimeout(() => (scrolling.current = false), animTime);
+    }
+  };
 
   useEffect(() => {
     const handleWheel = (e: Event) => {
@@ -199,9 +227,16 @@ export default function MainScrollAdventure() {
 
     window.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [navigateUp, navigateDown]);
 
@@ -343,15 +378,15 @@ export default function MainScrollAdventure() {
         </div>
       </nav>
 
-      {/* Progress Indicator */}
-      <div className="fixed top-20 right-4 z-50 flex flex-col gap-2">
+      {/* Progress Indicator - Mobile Responsive */}
+      <div className="fixed top-20 right-2 md:right-4 z-50 flex flex-col gap-1 md:gap-2">
         {pages.map((_, i) => (
           <div
             key={i}
-            className={`w-4 h-4 rounded-full transition-all duration-500 cursor-pointer ${
+            className={`w-3 h-3 md:w-4 md:h-4 rounded-full transition-all duration-500 cursor-pointer ${
               currentPage === i + 1 
-                ? 'bg-natural-gold-400 scale-125 shadow-lg' 
-                : 'bg-white/40 hover:bg-white/60 hover:scale-110'
+                ? 'bg-natural-gold-400 scale-110 md:scale-125 shadow-lg' 
+                : 'bg-white/40 hover:bg-white/60 hover:scale-105 md:hover:scale-110'
             }`}
             onClick={() => {
               if (!scrolling.current) {
@@ -364,16 +399,60 @@ export default function MainScrollAdventure() {
         ))}
       </div>
 
-      {/* Page Counter */}
-      <div className="fixed top-20 left-4 z-50 text-white/80 font-medium">
-        <span className="text-2xl font-bold text-natural-gold-400">{currentPage}</span>
-        <span className="text-lg">/{numOfPages}</span>
+      {/* Page Counter - Mobile Responsive */}
+      <div className="fixed top-20 left-2 md:left-4 z-50 text-white/80 font-medium">
+        <span className="text-lg md:text-2xl font-bold text-natural-gold-400">{currentPage}</span>
+        <span className="text-sm md:text-lg">/{numOfPages}</span>
       </div>
 
-      {/* Scroll Hint */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 text-white/70 text-sm flex flex-col items-center">
-        <div className="animate-bounce mb-2 text-lg">↓</div>
-        <span>Kaydırın, ok tuşları veya noktalara tıklayın</span>
+      {/* Mobile Navigation Buttons */}
+      <div className="md:hidden fixed bottom-4 left-4 right-4 z-50 flex justify-between items-center">
+        <button
+          onClick={() => {
+            if (!scrolling.current && currentPage > 1) {
+              navigateUp();
+              scrolling.current = true;
+              setTimeout(() => (scrolling.current = false), animTime);
+            }
+          }}
+          disabled={currentPage === 1}
+          className={`p-3 rounded-full backdrop-blur-md border transition-all ${
+            currentPage === 1 
+              ? 'bg-black/20 border-white/20 text-white/40' 
+              : 'bg-black/40 border-white/40 text-white hover:bg-white/20'
+          }`}
+        >
+          <i className="ri-arrow-up-s-line text-xl"></i>
+        </button>
+        
+        <div className="text-white/80 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/30">
+          <span className="text-sm font-medium">{currentPage} / {numOfPages}</span>
+        </div>
+        
+        <button
+          onClick={() => {
+            if (!scrolling.current && currentPage < numOfPages) {
+              navigateDown();
+              scrolling.current = true;
+              setTimeout(() => (scrolling.current = false), animTime);
+            }
+          }}
+          disabled={currentPage === numOfPages}
+          className={`p-3 rounded-full backdrop-blur-md border transition-all ${
+            currentPage === numOfPages 
+              ? 'bg-black/20 border-white/20 text-white/40' 
+              : 'bg-black/40 border-white/40 text-white hover:bg-white/20'
+          }`}
+        >
+          <i className="ri-arrow-down-s-line text-xl"></i>
+        </button>
+      </div>
+
+      {/* Scroll Hint - Mobile Responsive */}
+      <div className="fixed bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 z-50 text-white/70 text-xs md:text-sm flex flex-col items-center px-2">
+        <div className="animate-bounce mb-1 md:mb-2 text-base md:text-lg hidden md:block">↓</div>
+        <span className="text-center hidden md:block">Kaydırın, ok tuşları veya noktalara tıklayın</span>
+        <span className="text-center md:hidden text-xs">Yukarı/aşağı kaydır</span>
       </div>
 
       {pages.map((page, i) => {
@@ -386,41 +465,41 @@ export default function MainScrollAdventure() {
 
         return (
           <div key={idx} className="absolute inset-0">
-            {/* Left Half */}
+            {/* Left Half - Mobile Responsive */}
             <div
-              className="absolute top-0 left-0 w-1/2 h-full transition-transform duration-[1200ms] ease-in-out"
+              className="absolute top-0 left-0 w-full md:w-1/2 h-full transition-transform duration-[1200ms] ease-in-out"
               style={{ transform: leftTrans }}
             >
               <div
                 className="w-full h-full bg-cover bg-center bg-no-repeat bg-natural-sage-600"
                 style={{ backgroundImage: page.leftBgImage ? `url(${page.leftBgImage})` : undefined }}
               >
-                <div className="flex flex-col items-center justify-center h-full text-white p-8 bg-black/60">
+                <div className="flex flex-col items-center justify-center h-full text-white px-4 py-16 md:p-8 bg-black/60">
                   {page.leftContent && (
                     <>
-                      <h2 className="text-4xl font-bold mb-6 text-center drop-shadow-2xl leading-tight">
+                      <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-center drop-shadow-2xl leading-tight">
                         {page.leftContent.heading}
                       </h2>
-                      <p className="text-lg text-center max-w-lg leading-relaxed drop-shadow-lg mb-6">
+                      <p className="text-base md:text-lg text-center max-w-sm md:max-w-lg leading-relaxed drop-shadow-lg mb-4 md:mb-6">
                         {page.leftContent.description}
                       </p>
                       {page.leftContent.subtitle && (
-                        <p className="text-base text-center text-natural-gold-200 mb-6 italic">
+                        <p className="text-sm md:text-base text-center text-natural-gold-200 mb-4 md:mb-6 italic px-2">
                           {page.leftContent.subtitle}
                         </p>
                       )}
                       {page.leftContent.rating && (
-                        <div className="flex text-natural-gold-400 text-2xl mb-6">
+                        <div className="flex text-natural-gold-400 text-xl md:text-2xl mb-4 md:mb-6">
                           {[...Array(page.leftContent.rating)].map((_, i) => (
                             <span key={i}>⭐</span>
                           ))}
                         </div>
                       )}
                       {page.leftContent.features && (
-                        <ul className="space-y-3 text-sm max-w-lg">
+                        <ul className="space-y-2 md:space-y-3 text-xs md:text-sm max-w-xs md:max-w-lg">
                           {page.leftContent.features.map((feature, fi) => (
                             <li key={fi} className="flex items-start">
-                              <span className="text-natural-gold-400 mr-3 mt-1 flex-shrink-0">✓</span>
+                              <span className="text-natural-gold-400 mr-2 md:mr-3 mt-1 flex-shrink-0">✓</span>
                               <span className="leading-relaxed">{feature}</span>
                             </li>
                           ))}
@@ -432,47 +511,47 @@ export default function MainScrollAdventure() {
               </div>
             </div>
 
-            {/* Right Half */}
+            {/* Right Half - Mobile Responsive */}
             <div
-              className="absolute top-0 left-1/2 w-1/2 h-full transition-transform duration-[1200ms] ease-in-out"
+              className="absolute top-0 left-0 md:left-1/2 w-full md:w-1/2 h-full transition-transform duration-[1200ms] ease-in-out"
               style={{ transform: rightTrans }}
             >
               <div
                 className="w-full h-full bg-cover bg-center bg-no-repeat bg-natural-gold-600"
                 style={{ backgroundImage: page.rightBgImage ? `url(${page.rightBgImage})` : undefined }}
               >
-                <div className="flex flex-col items-center justify-center h-full text-white p-8 bg-black/60">
+                <div className="flex flex-col items-center justify-center h-full text-white px-4 py-16 md:p-8 bg-black/60">
                   {page.rightContent && (
                     <>
-                      <h2 className="text-4xl font-bold mb-6 text-center drop-shadow-2xl leading-tight">
+                      <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6 text-center drop-shadow-2xl leading-tight">
                         {page.rightContent.heading}
                       </h2>
-                      <p className="text-lg text-center max-w-lg leading-relaxed drop-shadow-lg mb-6">
+                      <p className="text-base md:text-lg text-center max-w-sm md:max-w-lg leading-relaxed drop-shadow-lg mb-4 md:mb-6">
                         {page.rightContent.description}
                       </p>
                       {page.rightContent.subtitle && (
-                        <p className="text-base text-center text-natural-gold-200 mb-6 italic">
+                        <p className="text-sm md:text-base text-center text-natural-gold-200 mb-4 md:mb-6 italic px-2">
                           {page.rightContent.subtitle}
                         </p>
                       )}
                       {page.rightContent.features && (
-                        <ul className="space-y-3 text-sm mb-8 max-w-lg">
+                        <ul className="space-y-2 md:space-y-3 text-xs md:text-sm mb-6 md:mb-8 max-w-xs md:max-w-lg">
                           {page.rightContent.features.map((feature, fi) => (
                             <li key={fi} className="flex items-start">
-                              <span className="text-natural-gold-400 mr-3 mt-1 flex-shrink-0">✓</span>
+                              <span className="text-natural-gold-400 mr-2 md:mr-3 mt-1 flex-shrink-0">✓</span>
                               <span className="leading-relaxed">{feature}</span>
                             </li>
                           ))}
                         </ul>
                       )}
                       {page.rightContent.showContact && (
-                        <div className="glass-natural text-natural-charcoal-800 rounded-full px-6 py-3 flex items-center mb-6 backdrop-blur-md shadow-xl">
-                          <i className="ri-phone-fill text-xl mr-3 text-natural-brown-600"></i>
-                          <span className="text-lg font-bold">0224 123 45 67</span>
+                        <div className="glass-natural text-natural-charcoal-800 rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center mb-4 md:mb-6 backdrop-blur-md shadow-xl">
+                          <i className="ri-phone-fill text-lg md:text-xl mr-2 md:mr-3 text-natural-brown-600"></i>
+                          <span className="text-base md:text-lg font-bold">0224 123 45 67</span>
                         </div>
                       )}
                       {page.rightContent.showCTA && (
-                        <Link href="/randevu" className="bg-natural-gold-500 hover:bg-natural-gold-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-2xl transition-all cursor-pointer inline-flex items-center">
+                        <Link href="/randevu" className="bg-natural-gold-500 hover:bg-natural-gold-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-full text-base md:text-lg font-semibold hover:shadow-2xl transition-all cursor-pointer inline-flex items-center">
                           📞 Hemen Ara & Randevu Al
                           <i className="ri-calendar-check-line ml-2"></i>
                         </Link>
